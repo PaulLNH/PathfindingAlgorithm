@@ -12,11 +12,17 @@ function heuristic(a, b) {
   return d;
 }
 
-var cols = 50;
-var rows = 50;
+const gridW = 800;
+const gridH = 800;
+const cols = 50;
+const rows = 50;
+const pathColor = "blue";
 var grid = new Array(cols);
 
+// Stores nodes that still need to be evaluated, if openSet is empty
+// then the algorithm is completed (either by finding end or not)
 var openSet = [];
+// Stores all the nodes that have finished being evaluated
 var closedSet = [];
 var start;
 var end;
@@ -33,20 +39,25 @@ function Spot(i, j) {
   this.previous = undefined;
   this.wall = false;
 
+  // Sets number of obstacles
   if (random(1) < 0.3) {
     this.wall = true;
   }
 
-  this.show = function (col) {
-    fill(col);
+  this.show = function(col) {
+    // fill(col);
     if (this.wall) {
       fill(0);
-    }
-    noStroke();
-    rect(this.i * w, this.j * h, w - 1, h - 1);
-  }
+      noStroke();
+      // Draw circles for better diag pathfinding
+      ellipse(this.i * w + w / 2, this.j * h + h / 2, w / 2, h / 2);
 
-  this.addNeighbors = function (grid) {
+      // Draws rectangles, this makes diag pathfinding odd
+      // rect(this.i * w, this.j * h, w - 1, h - 1);
+    }
+  };
+
+  this.addNeighbors = function(grid) {
     var i = this.i;
     var j = this.j;
     if (i < cols - 1) {
@@ -73,29 +84,29 @@ function Spot(i, j) {
     if (i < cols - 1 && j < rows - 1) {
       this.neighbors.push(grid[i + 1][j + 1]);
     }
-  }
+  };
 }
 
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(gridW, gridH);
   console.log("A*");
 
   w = width / cols;
   h = height / rows;
 
   // Making a 2D array
-  for (var i = 0; i < cols; i++) {
+  for (let i = 0; i < cols; i++) {
     grid[i] = new Array(rows);
   }
 
   for (var i = 0; i < cols; i++) {
-    for (var j = 0; j < cols; j++) {
+    for (var j = 0; j < rows; j++) {
       grid[i][j] = new Spot(i, j);
     }
   }
 
   for (var i = 0; i < cols; i++) {
-    for (var j = 0; j < cols; j++) {
+    for (var j = 0; j < rows; j++) {
       grid[i][j].addNeighbors(grid);
     }
   }
@@ -107,16 +118,15 @@ function setup() {
 
   openSet.push(start);
   console.log(grid);
-
 }
 
+// Use draw loop for the 'while openSet is not empty'
 function draw() {
-
   if (openSet.length > 0) {
-    // we can keep going
+    // we can keep looking for the endpoint
     var winner = 0;
     for (var i = 0; i < openSet.length; i++) {
-      if (openSet[i] < openSet[winner].f) {
+      if (openSet[i].f < openSet[winner].f) {
         winner = i;
       }
     }
@@ -159,14 +169,14 @@ function draw() {
       }
     }
   } else {
-    // no solution
-    console.log('No path avaiable');
+    // openSet has no nodes, but we have not arrived at
+    // the end, there is no solution for this problem
+    console.log("No path avaiable");
     noLoop();
     return;
   }
 
-
-  background(0);
+  background(255);
 
   for (var i = 0; i < cols; i++) {
     for (var j = 0; j < rows; j++) {
@@ -190,7 +200,20 @@ function draw() {
     temp = temp.previous;
   }
 
+  // for (var i = 0; i < path.length; i++) {
+  //   path[i].show(color(0, 0, 255));
+  // }
+
+  noFill();
+  stroke(pathColor);
+  strokeWeight(w / 2);
+  beginShape();
   for (var i = 0; i < path.length; i++) {
-    path[i].show(color(0, 0, 255));
+    // Draws a vertex path
+    vertex(path[i].i * w + w / 2, path[i].j * h + h / 2);
+
+    // Draws a line path
+    // path[i].show(color(0, 0, 255));
   }
+  endShape();
 }
